@@ -1,29 +1,37 @@
 import { render, screen } from '@testing-library/react'
+import { mocked } from 'ts-jest/utils'
+import { useSession } from 'next-auth/client'
 import { SignInButton } from '.'
 
-jest.mock('next/router', () => {
-  return {
-    useRouter() {
-      return {
-        asPath: '/',
-      }
-    },
-  }
-})
-
-jest.mock('next-auth/client', () => {
-  return {
-    useSession() {
-      return [null, false]
-    },
-  }
-})
+jest.mock('next-auth/client')
 
 describe('SignInButton component', () => {
-  it('should renders correctly', () => {
+  it('renders correctly when user is not authemticated', () => {
+    const useSessionMocked = mocked(useSession)
+
+    useSessionMocked.mockReturnValueOnce([null, false])
+
     render(<SignInButton />)
 
-    expect(screen.getByText('Home')).toBeInTheDocument()
-    expect(screen.getByText('Posts')).toBeInTheDocument()
+    expect(screen.getByText('Sign in with GitHub')).toBeInTheDocument()
+  })
+
+  it('renders correctly when user is authemticated', () => {
+    const useSessionMocked = mocked(useSession)
+
+    useSessionMocked.mockReturnValue([
+      {
+        user: {
+          name: 'John Doe',
+          email: 'john.doe@gmail.com',
+        },
+        expires: 'fake-expires',
+      },
+      false,
+    ])
+
+    render(<SignInButton />)
+
+    expect(screen.getByText('John Doe')).toBeInTheDocument()
   })
 })
